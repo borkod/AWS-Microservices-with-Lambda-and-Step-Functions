@@ -1,29 +1,50 @@
 {
-    "Comment": "OrderWorkflow Step Function",
-    "StartAt": "BookHotelClient",
+    "StartAt": "BookHotelState",
     "States": {
-      "BookHotelClient": {
-        "Type": "Task",
-        "Resource":"arn:aws:lambda:us-east-1:253640467280:function:BookHotelClientS1P2",
-        "Parameters":{  
-            "buyer_id.$": "$.purchase.buyer_id",
-            "start_date.$": "$.hotel.start_date",
-            "end_date.$": "$.hotel.end_date",
-            "near.$": "$.museum.name"
+        "BookHotelState": {
+            "Next": "BookMuseumState",
+            "Parameters": {
+                "buyer_id.$": "$.purchase.buyer_id",
+                "end_date.$": "$.hotel.end_date",
+                "near.$": "$.museum.name",
+                "start_date.$": "$.hotel.start_date"
+            },
+            "Resource": "arn:aws:lambda:us-east-1:xxxxx:function:BookHotelClientS1P3",
+            "Retry": [ {
+              "ErrorEquals": ["TransientError"],
+              "IntervalSeconds": 1,
+              "MaxAttempts": 3,
+              "BackoffRate": 2.0
+            } ],
+            "ResultPath": "$.hotel",
+            "Type": "Task"
         },
-        "ResultPath": "$.hotel",
-        "Next": "BookMuseumClient"
-      },
-      "BookMuseumClient": {
-        "Type": "Task",
-        "Resource":"arn:aws:lambda:us-east-1:253640467280:function:BookMuseumClientS1P2",
-        "Parameters":{  
-            "buyer_id.$": "$.purchase.buyer_id",
-            "when.$": "$.museum.when",
-            "museum_name.$": "$.museum.name"
+        "BookMuseumState": {
+            "End": true,
+            "Parameters": {
+                "buyer_id.$": "$.purchase.buyer_id",
+                "museum_name.$": "$.museum.name",
+                "when.$": "$.museum.when"
+            },
+            "Resource": "arn:aws:lambda:us-east-1:xxxxx:function:BookMuseumClientS1P3",
+            "Retry": [ {
+              "ErrorEquals": ["TransientError"],
+              "IntervalSeconds": 1,
+              "MaxAttempts": 3,
+              "BackoffRate": 2.0
+            } ], 
+            "Catch": [ {
+              "ErrorEquals": ["States.ALL"],
+              "ResultPath": "$.errorInfo",
+              "Next": "CancelHotelState"
+             } ],
+            "ResultPath": "$.museum",
+            "Type": "Task"
         },
-        "ResultPath": "$.museum",
-        "End": true
-      }
+        "CancelHotelState": {
+            "End": true,
+            "Resource": "arn:aws:lambda:us-east-1:xxxxx:function:CancelHotelClient",         
+            "Type": "Task"
+        }      
     }
-  }
+}
