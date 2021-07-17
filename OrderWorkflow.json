@@ -4,13 +4,25 @@
     "States": {
       "BookHotelClient": {
         "Type": "Task",
-        "Resource":"arn:aws:lambda:us-east-1:xxxxx:function:BookHotelClientS1P2",
+        "Resource":"arn:aws:lambda:us-east-1:253640467280:function:BookHotelClientS1P2",
         "Parameters":{  
-          "buyer_id":"id1234",
-          "start_date":"2020-03-13",
-          "end_date":"2020-03-15",
-          "near":"Vatican Museums"
+            "buyer_id.$": "$.purchase.buyer_id",
+            "start_date.$": "$.hotel.start_date",
+            "end_date.$": "$.hotel.end_date",
+            "near.$": "$.museum.name"
         },
+        "ResultPath": "$.hotel",
+        "Next": "BookMuseumClient"
+      },
+      "BookMuseumClient": {
+        "Type": "Task",
+        "Resource":"arn:aws:lambda:us-east-1:253640467280:function:BookMuseumClientS1P2",
+        "Parameters":{  
+            "buyer_id.$": "$.purchase.buyer_id",
+            "when.$": "$.museum.when",
+            "museum_name.$": "$.museum.name"
+        },
+        "ResultPath": "$.museum",
         "End": true
       }
     }
